@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Food Logger</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0f0f0f;
+  color: #e2e2e2;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 48px;
+}
+.topbar {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+h1 { font-size: 22px; font-weight: 700; color: #fff; }
+.gear-btn {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  width: 38px; height: 38px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s;
+}
+.gear-btn:hover { border-color: #f97316; }
+
+/* Pages */
+.page { display: none; width: 100%; max-width: 480px; }
+.page.active { display: block; }
+
+/* Card */
+.card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.not-configured {
+  background: #1a1a1a;
+  border: 1px solid #f97316;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #f97316;
+  text-align: center;
+}
+
+/* Meal buttons */
+.meal-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.meal-btn {
+  flex: 1;
+  padding: 8px 4px;
+  border-radius: 8px;
+  border: 1px solid #2a2a2a;
+  background: #111;
+  color: #666;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.meal-btn.active {
+  background: #f97316;
+  border-color: #f97316;
+  color: #000;
+  font-weight: 700;
+}
+
+/* Input */
+.input-row { display: flex; gap: 10px; }
+input[type="text"], input[type="password"], input[type="url"] {
+  flex: 1;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 13px 16px;
+  font-size: 15px;
+  color: #e2e2e2;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+input:focus { border-color: #f97316; }
+input::placeholder { color: #3a3a3a; }
+
+button.log-btn {
+  background: #f97316;
+  border: none;
+  border-radius: 10px;
+  padding: 0 20px;
+  font-size: 22px;
+  color: #000;
+  cursor: pointer;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+button.log-btn:hover { background: #ea6a0a; }
+button.log-btn:disabled { background: #2a2a2a; color: #555; cursor: not-allowed; }
+
+.status { margin-top: 14px; min-height: 20px; font-size: 14px; text-align: center; }
+.status.ok      { color: #4ade80; }
+.status.err     { color: #f87171; }
+.status.loading { color: #888; }
+
+.macros-row {
+  display: flex; gap: 10px; margin-top: 10px;
+  justify-content: center;
+}
+.macro {
+  background: #111; border-radius: 8px;
+  padding: 6px 12px; font-size: 12px; text-align: center;
+}
+.macro span { display: block; font-size: 16px; font-weight: 700; }
+.macro.cal span  { color: #f97316; }
+.macro.pro span  { color: #3b82f6; }
+.macro.carb span { color: #a855f7; }
+.macro.fat span  { color: #eab308; }
+
+.examples { font-size: 12px; color: #3a3a3a; margin-top: 12px; line-height: 1.9; }
+.examples span { color: #555; }
+
+/* Log list */
+.log-item {
+  background: #1a1a1a; border: 1px solid #2a2a2a;
+  border-radius: 10px; padding: 12px 16px;
+  margin-bottom: 8px;
+  display: flex; justify-content: space-between; align-items: center;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity:0; transform: translateY(-4px); } to { opacity:1; } }
+.log-name { font-size: 14px; color: #ddd; font-weight: 500; text-transform: capitalize; }
+.log-sub  { font-size: 12px; color: #555; margin-top: 2px; }
+.log-cals { font-size: 16px; font-weight: 700; color: #f97316; }
+
+/* Settings */
+.settings-title {
+  font-size: 18px; font-weight: 700; color: #fff;
+  margin-bottom: 20px;
+}
+.field { margin-bottom: 16px; }
+.field label {
+  display: block; font-size: 12px; color: #666;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.field select {
+  width: 100%;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 13px 16px;
+  font-size: 14px;
+  color: #e2e2e2;
+  outline: none;
+}
+.field select:focus { border-color: #f97316; }
+.save-btn {
+  width: 100%;
+  background: #f97316;
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #000;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.15s;
+}
+.save-btn:hover { background: #ea6a0a; }
+.save-status { font-size: 13px; text-align: center; margin-top: 10px; }
+.back-btn {
+  background: none;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+.back-btn:hover { border-color: #555; color: #ccc; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>🍗 Food Logger</h1>
+  <button class="gear-btn" onclick="showSettings()" title="Settings">⚙️</button>
+</div>
+
+<!-- LOG PAGE -->
+<div class="page active" id="logPage">
+  <div class="not-configured" id="notConfigured" style="display:none">
+    ⚠️ Not configured yet — tap ⚙️ to add your settings
+  </div>
+
+  <div class="card">
+    <div class="meal-row" id="mealRow">
+      <button class="meal-btn" onclick="setMeal('breakfast')">Breakfast</button>
+      <button class="meal-btn" onclick="setMeal('lunch')">Lunch</button>
+      <button class="meal-btn" onclick="setMeal('dinner')">Dinner</button>
+      <button class="meal-btn" onclick="setMeal('snacks')">Snacks</button>
+    </div>
+    <div class="input-row">
+      <input type="text" id="foodInput" placeholder="100g raw chicken breast" />
+      <button class="log-btn" id="logBtn" onclick="logFood()">+</button>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="macros-row" id="macrosRow" style="display:none">
+      <div class="macro cal"><span id="mCal">-</span>cal</div>
+      <div class="macro pro"><span id="mPro">-</span>g P</div>
+      <div class="macro carb"><span id="mCarb">-</span>g C</div>
+      <div class="macro fat"><span id="mFat">-</span>g F</div>
+    </div>
+    <div class="examples">
+      <span>Examples:</span><br>
+      100g raw chicken breast<br>
+      80g oats, 389 cal 17g protein 66g carbs per 100g<br>
+      2 eggs<br>
+      350g salmon fillet
+    </div>
+  </div>
+
+  <div id="logList"></div>
+</div>
+
+<!-- SETTINGS PAGE -->
+<div class="page" id="settingsPage">
+  <button class="back-btn" onclick="showLog()">← Back</button>
+  <div class="card">
+    <div class="settings-title">Settings</div>
+
+    <div class="field">
+      <label>SparkyFitness URL</label>
+      <input type="url" id="sUrl" placeholder="http://192.168.68.77" />
+    </div>
+    <div class="field">
+      <label>SparkyFitness Email</label>
+      <input type="text" id="sEmail" placeholder="you@email.com" />
+    </div>
+    <div class="field">
+      <label>SparkyFitness Password</label>
+      <input type="password" id="sPass" placeholder="••••••••" />
+    </div>
+    <div class="field">
+      <label>AiZolo API Key</label>
+      <input type="password" id="sKey" placeholder="••••••••" />
+    </div>
+    <div class="field">
+      <label>AI Model</label>
+      <select id="sModel">
+        <option value="gemini/gemini-2.5-flash">Gemini 2.5 Flash (recommended)</option>
+        <option value="gemini/gemini-2.5-pro">Gemini 2.5 Pro</option>
+        <option value="claude/claude-haiku-4-5-20251001">Claude Haiku</option>
+        <option value="claude/claude-sonnet-4-6">Claude Sonnet 4.6</option>
+        <option value="openai/gpt-4.1-mini">GPT-4.1 Mini</option>
+        <option value="openai/gpt-4.1">GPT-4.1</option>
+        <option value="deepseek/deepseek-chat">DeepSeek Chat</option>
+      </select>
+    </div>
+
+    <button class="save-btn" onclick="saveSettings()">Save Settings</button>
+    <div class="save-status" id="saveStatus"></div>
+  </div>
+</div>
+
+<script>
+let meal = 'lunch';
+const entries = [];
+
+// ── Init ──────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  autoMeal();
+  await loadConfig();
+});
+
+async function loadConfig() {
+  try {
+    const r = await fetch('/config');
+    const cfg = await r.json();
+    document.getElementById('sUrl').value   = cfg.sparky_url   || '';
+    document.getElementById('sEmail').value = cfg.sparky_email || '';
+    document.getElementById('sPass').value  = cfg.sparky_pass  || '';
+    document.getElementById('sKey').value   = cfg.aizolo_key   || '';
+    document.getElementById('sModel').value = cfg.aizolo_model || 'gemini/gemini-2.5-flash';
+    document.getElementById('notConfigured').style.display = cfg.configured ? 'none' : 'block';
+  } catch(e) {}
+}
+
+// ── Meal selection ────────────────────────────────────
+function setMeal(m) {
+  meal = m;
+  document.querySelectorAll('.meal-btn').forEach(b =>
+    b.classList.toggle('active', b.textContent.toLowerCase() === m)
+  );
+}
+
+function autoMeal() {
+  const h = new Date().getHours();
+  if      (h < 11) setMeal('breakfast');
+  else if (h < 15) setMeal('lunch');
+  else if (h < 20) setMeal('dinner');
+  else             setMeal('snacks');
+}
+
+// ── Log food ──────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('foodInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') logFood();
+  });
+});
+
+async function logFood() {
+  const input  = document.getElementById('foodInput');
+  const text   = input.value.trim();
+  if (!text) return;
+
+  const btn       = document.getElementById('logBtn');
+  const status    = document.getElementById('status');
+  const macrosRow = document.getElementById('macrosRow');
+
+  btn.disabled = true;
+  status.className = 'status loading';
+  status.textContent = 'Logging...';
+  macrosRow.style.display = 'none';
+
+  try {
+    const resp = await fetch('/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, meal_type: meal })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || 'Error');
+
+    status.className = 'status ok';
+    status.textContent = data.message;
+
+    const m = data.macros;
+    document.getElementById('mCal').textContent  = m.calories;
+    document.getElementById('mPro').textContent  = m.protein;
+    document.getElementById('mCarb').textContent = m.carbs;
+    document.getElementById('mFat').textContent  = m.fat;
+    macrosRow.style.display = 'flex';
+
+    entries.unshift({ text, meal, macros: m });
+    renderLog();
+    input.value = '';
+  } catch(e) {
+    status.className = 'status err';
+    status.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false;
+    input.focus();
+  }
+}
+
+function renderLog() {
+  document.getElementById('logList').innerHTML = entries.slice(0, 15).map(e => `
+    <div class="log-item">
+      <div>
+        <div class="log-name">${e.text}</div>
+        <div class="log-sub">${e.meal} · ${e.macros.protein}g P · ${e.macros.carbs}g C · ${e.macros.fat}g F</div>
+      </div>
+      <div class="log-cals">${e.macros.calories}</div>
+    </div>
+  `).join('');
+}
+
+// ── Settings ──────────────────────────────────────────
+async function saveSettings() {
+  const status = document.getElementById('saveStatus');
+  status.style.color = '#888';
+  status.textContent = 'Saving...';
+  try {
+    const resp = await fetch('/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sparky_url:   document.getElementById('sUrl').value.trim(),
+        sparky_email: document.getElementById('sEmail').value.trim(),
+        sparky_pass:  document.getElementById('sPass').value,
+        aizolo_key:   document.getElementById('sKey').value,
+        aizolo_model: document.getElementById('sModel').value,
+      })
+    });
+    if (!resp.ok) throw new Error('Save failed');
+    status.style.color = '#4ade80';
+    status.textContent = '✅ Saved!';
+    document.getElementById('notConfigured').style.display = 'none';
+    setTimeout(() => showLog(), 1000);
+  } catch(e) {
+    status.style.color = '#f87171';
+    status.textContent = '❌ ' + e.message;
+  }
+}
+
+// ── Navigation ────────────────────────────────────────
+function showSettings() {
+  document.getElementById('logPage').classList.remove('active');
+  document.getElementById('settingsPage').classList.add('active');
+}
+function showLog() {
+  document.getElementById('settingsPage').classList.remove('active');
+  document.getElementById('logPage').classList.add('active');
+}
+</script>
+</body>
+</html>

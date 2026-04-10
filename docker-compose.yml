@@ -1,0 +1,12 @@
+services:
+  sparky-logger:
+    build: .
+    container_name: sparky-logger
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - sparky-logger-data:/data
+
+volumes:
+  sparky-logger-data:
