@@ -1,6 +1,6 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 import httpx
 import json
@@ -10,6 +10,9 @@ from pathlib import Path
 import re
 from typing import Optional
 from collections import OrderedDict
+import secrets
+import hmac
+import hashlib
 
 app = FastAPI()
 
@@ -53,32 +56,109 @@ class ConfigPayload(BaseModel):
     sparky_pass: str
     aizolo_key: str
     aizolo_model: str = "gemini/gemini-2.5-flash"
+    app_password: str = ""
+
+class LoginRequest(BaseModel):
+    password: str
+
+AUTH_COOKIE_NAME = "sparky_logger_auth"
+AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 @app.get("/config")
-async def get_config():
+async def get_config(request: Request):
     cfg = load_config()
+    require_auth_if_enabled(request, cfg)
     return {
         "sparky_url":   cfg.get("sparky_url",   "http://192.168.68.77"),
         "sparky_email": cfg.get("sparky_email",  ""),
         "sparky_pass":  "••••••••" if cfg.get("sparky_pass")  else "",
         "aizolo_key":   "••••••••" if cfg.get("aizolo_key")   else "",
         "aizolo_model": cfg.get("aizolo_model",  "gemini/gemini-2.5-flash"),
+        "app_password": "••••••••" if cfg.get("app_password_hash") else "",
         "configured":   bool(cfg.get("sparky_email") and cfg.get("sparky_pass") and cfg.get("aizolo_key"))
     }
 
+def hash_app_password(password: str) -> str:
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+
+def get_or_create_auth_secret(cfg: dict) -> str:
+    secret = cfg.get("app_auth_secret")
+    if not secret:
+        secret = secrets.token_hex(32)
+        cfg["app_auth_secret"] = secret
+        save_config(cfg)
+    return secret
+
+def build_auth_token(secret: str, password_hash: str) -> str:
+    return hmac.new(secret.encode("utf-8"), password_hash.encode("utf-8"), hashlib.sha256).hexdigest()
+
+def is_authenticated(request: Request, cfg: dict) -> bool:
+    password_hash = cfg.get("app_password_hash")
+    if not password_hash:
+        return True
+    token = request.cookies.get(AUTH_COOKIE_NAME)
+    if not token:
+        return False
+    secret = get_or_create_auth_secret(cfg)
+    expected = build_auth_token(secret, password_hash)
+    return hmac.compare_digest(token, expected)
+
+def require_auth_if_enabled(request: Request, cfg: dict):
+    if not is_authenticated(request, cfg):
+        raise HTTPException(401, "Unauthorized")
+
+@app.get("/auth/status")
+async def auth_status(request: Request):
+    cfg = load_config()
+    return {
+        "requires_auth": bool(cfg.get("app_password_hash")),
+        "authenticated": is_authenticated(request, cfg)
+    }
+
 @app.post("/config")
-async def set_config(payload: ConfigPayload):
+async def set_config(payload: ConfigPayload, request: Request):
     existing = load_config()
+    require_auth_if_enabled(request, existing)
     cfg = {
         "sparky_url":   payload.sparky_url,
         "sparky_email": payload.sparky_email,
         "sparky_pass":  payload.sparky_pass if payload.sparky_pass != "••••••••" else existing.get("sparky_pass", ""),
         "aizolo_key":   payload.aizolo_key  if payload.aizolo_key  != "••••••••" else existing.get("aizolo_key", ""),
         "aizolo_model": payload.aizolo_model,
+        "app_password_hash": (
+            hash_app_password(payload.app_password) if payload.app_password and payload.app_password != "••••••••"
+            else existing.get("app_password_hash", "")
+        ),
+        "app_auth_secret": existing.get("app_auth_secret") or secrets.token_hex(32),
     }
     save_config(cfg)
     _session["cookie"] = None
     _session["user_id"] = None
+    return {"ok": True}
+
+@app.post("/auth/login")
+async def login(payload: LoginRequest, response: Response):
+    cfg = load_config()
+    stored_hash = cfg.get("app_password_hash")
+    if not stored_hash:
+        return {"ok": True, "auth_disabled": True}
+    if hash_app_password(payload.password) != stored_hash:
+        raise HTTPException(401, "Invalid password")
+    secret = get_or_create_auth_secret(cfg)
+    token = build_auth_token(secret, stored_hash)
+    response.set_cookie(
+        key=AUTH_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+        max_age=AUTH_COOKIE_MAX_AGE
+    )
+    return {"ok": True}
+
+@app.post("/auth/logout")
+async def logout(response: Response):
+    response.delete_cookie(AUTH_COOKIE_NAME)
     return {"ok": True}
 
 async def get_session():
@@ -281,9 +361,10 @@ def nutrition_from_manual(req: EditEntryRequest) -> Optional[dict]:
     }
 
 @app.post("/chat")
-async def chat(req: ChatRequest):
+async def chat(req: ChatRequest, request: Request):
     global _pending_draft
     cfg = load_config()
+    require_auth_if_enabled(request, cfg)
     if not cfg.get("aizolo_key"):
         raise HTTPException(400, "Not configured — open Settings first")
 
@@ -328,8 +409,9 @@ async def chat(req: ChatRequest):
     }
 
 @app.post("/log")
-async def log_food(req: LogRequest):
+async def log_food(req: LogRequest, request: Request):
     cfg = load_config()
+    require_auth_if_enabled(request, cfg)
     if not cfg.get("aizolo_key"):
         raise HTTPException(400, "Not configured — open Settings first")
     quick_n = parse_quick_add(req.text)
@@ -355,8 +437,9 @@ async def log_food(req: LogRequest):
     }
 
 @app.delete("/entries/{entry_id}")
-async def delete_entry(entry_id: str):
+async def delete_entry(entry_id: str, request: Request):
     cfg = load_config()
+    require_auth_if_enabled(request, cfg)
     cookie, _ = await get_session()
     headers = {"Cookie": cookie}
     async with httpx.AsyncClient(timeout=30) as client:
@@ -366,8 +449,9 @@ async def delete_entry(entry_id: str):
     return {"success": True}
 
 @app.patch("/entries/{entry_id}")
-async def edit_entry(entry_id: str, req: EditEntryRequest):
+async def edit_entry(entry_id: str, req: EditEntryRequest, request: Request):
     cfg = load_config()
+    require_auth_if_enabled(request, cfg)
     if not cfg.get("aizolo_key"):
         raise HTTPException(400, "Not configured — open Settings first")
     manual_nutrition = nutrition_from_manual(req)
@@ -394,5 +478,21 @@ async def edit_entry(entry_id: str, req: EditEntryRequest):
 async def root():
     with open("static/index.html") as f:
         return f.read()
+
+@app.get("/manifest.webmanifest")
+async def manifest():
+    return FileResponse("static/manifest.webmanifest", media_type="application/manifest+json")
+
+@app.get("/sw.js")
+async def service_worker():
+    return FileResponse("static/sw.js", media_type="application/javascript")
+
+@app.get("/icon-192.svg")
+async def icon_192():
+    return FileResponse("static/icon-192.svg", media_type="image/svg+xml")
+
+@app.get("/icon-512.svg")
+async def icon_512():
+    return FileResponse("static/icon-512.svg", media_type="image/svg+xml")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")

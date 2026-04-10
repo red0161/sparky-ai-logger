@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Macro Logger</title>
+<meta name="theme-color" content="#080808">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Macro Logger">
+<link rel="manifest" href="/manifest.webmanifest">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;700&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -352,6 +357,37 @@ button.log-btn.tap { animation: tapPulse 220ms ease; }
   margin-bottom: 20px;
 }
 .back-btn:hover { border-color: #333; color: #e5e5e5; }
+.auth-gate {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 8, 8, 0.96);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  padding: 16px;
+}
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+}
+.auth-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.auth-sub { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+.auth-row { display: flex; gap: 8px; }
+.auth-btn {
+  background: var(--accent);
+  border: none;
+  color: #000;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.auth-msg { margin-top: 8px; font-size: 13px; color: #f87171; min-height: 18px; }
 @media (max-width: 520px) {
   body { padding: 8px 12px 36px; }
   .card { padding: 14px; border-radius: 10px; }
@@ -364,6 +400,17 @@ button.log-btn.tap { animation: tapPulse 220ms ease; }
 </style>
 </head>
 <body>
+<div class="auth-gate" id="authGate">
+  <div class="auth-card">
+    <div class="auth-title">Unlock Macro Logger</div>
+    <div class="auth-sub">Log in once and stay signed in on this device.</div>
+    <div class="auth-row">
+      <input type="password" id="authPassword" placeholder="App password" />
+      <button class="auth-btn" onclick="submitLogin()">Log In</button>
+    </div>
+    <div class="auth-msg" id="authMsg"></div>
+  </div>
+</div>
 
 <div class="topbar">
   <h1>Macro Logger</h1>
@@ -449,6 +496,10 @@ button.log-btn.tap { animation: tapPulse 220ms ease; }
       <input type="password" id="sKey" placeholder=" " />
       <label>AiZolo API Key</label>
     </div>
+    <div class="field floating">
+      <input type="password" id="appPassword" placeholder=" " />
+      <label>App Login Password</label>
+    </div>
     <div class="field">
       <label>AI Model</label>
       <select id="sModel">
@@ -470,21 +521,65 @@ button.log-btn.tap { animation: tapPulse 220ms ease; }
 <script>
 let meal = 'lunch';
 const entries = [];
+let appAuthenticated = false;
+let appRequiresAuth = false;
 
 // ── Init ──────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
+  await initAuth();
+  if (!appAuthenticated) return;
   autoMeal();
   await loadConfig();
 });
 
+async function initAuth() {
+  try {
+    const resp = await fetch('/auth/status');
+    const data = await resp.json();
+    appRequiresAuth = !!data.requires_auth;
+    appAuthenticated = !!data.authenticated || !appRequiresAuth;
+    document.getElementById('authGate').style.display = appAuthenticated ? 'none' : 'flex';
+  } catch (e) {
+    document.getElementById('authGate').style.display = 'flex';
+    document.getElementById('authMsg').textContent = 'Cannot verify auth status.';
+  }
+}
+
+async function submitLogin() {
+  const password = document.getElementById('authPassword').value;
+  const msg = document.getElementById('authMsg');
+  msg.textContent = '';
+  try {
+    const resp = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || 'Login failed');
+    appAuthenticated = true;
+    document.getElementById('authGate').style.display = 'none';
+    autoMeal();
+    await loadConfig();
+  } catch (e) {
+    msg.textContent = e.message;
+  }
+}
+
 async function loadConfig() {
   try {
     const r = await fetch('/config');
+    if (r.status === 401) {
+      appAuthenticated = false;
+      document.getElementById('authGate').style.display = 'flex';
+      return;
+    }
     const cfg = await r.json();
     document.getElementById('sUrl').value   = cfg.sparky_url   || '';
     document.getElementById('sEmail').value = cfg.sparky_email || '';
     document.getElementById('sPass').value  = cfg.sparky_pass  || '';
     document.getElementById('sKey').value   = cfg.aizolo_key   || '';
+    document.getElementById('appPassword').value = cfg.app_password || '';
     document.getElementById('sModel').value = cfg.aizolo_model || 'gemini/gemini-2.5-flash';
     document.getElementById('notConfigured').style.display = cfg.configured ? 'none' : 'block';
   } catch(e) {}
@@ -566,6 +661,11 @@ async function logFood() {
       body: JSON.stringify({ text, meal_type: meal })
     });
     const data = await resp.json();
+    if (resp.status === 401) {
+      appAuthenticated = false;
+      document.getElementById('authGate').style.display = 'flex';
+      throw new Error('Please log in');
+    }
     if (!resp.ok) throw new Error(data.detail || 'Error');
 
     status.className = 'status ok';
@@ -644,6 +744,11 @@ async function submitQuickAdd() {
       body: JSON.stringify({ text: quickText, meal_type: meal })
     });
     const data = await resp.json();
+    if (resp.status === 401) {
+      appAuthenticated = false;
+      document.getElementById('authGate').style.display = 'flex';
+      throw new Error('Please log in');
+    }
     if (!resp.ok) throw new Error(data.detail || 'Error');
 
     const m = data.macros;
@@ -773,6 +878,7 @@ async function saveSettings() {
         sparky_email: document.getElementById('sEmail').value.trim(),
         sparky_pass:  document.getElementById('sPass').value,
         aizolo_key:   document.getElementById('sKey').value,
+        app_password: document.getElementById('appPassword').value,
         aizolo_model: document.getElementById('sModel').value,
       })
     });
@@ -795,6 +901,12 @@ function showSettings() {
 function showLog() {
   document.getElementById('settingsPage').classList.remove('active');
   document.getElementById('logPage').classList.add('active');
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
 }
 </script>
 </body>
