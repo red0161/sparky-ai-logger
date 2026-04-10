@@ -3,39 +3,70 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Food Logger</title>
+<title>Macro Logger</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;700&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #080808;
+  --surface: #111111;
+  --border: #1f1f1f;
+  --accent: #e8700a;
+  --protein: #2d7ff9;
+  --carbs: #8b5cf6;
+  --fat: #d4a017;
+  --success: #22c55e;
+  --text: #f0f0f0;
+  --muted: #525252;
+}
 body {
-  background: #0f0f0f;
-  color: #e2e2e2;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24px 16px 48px;
+  padding: 10px 16px 48px;
 }
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   width: 100%;
   max-width: 480px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
+  background: var(--bg);
+  padding: 10px 0;
 }
-h1 { font-size: 22px; font-weight: 700; color: #fff; }
+h1 {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #fff;
+  text-transform: uppercase;
+}
+.subhead {
+  width: 100%;
+  max-width: 480px;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 14px;
+}
 .gear-btn {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: transparent;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  width: 38px; height: 38px;
-  font-size: 18px;
+  width: 34px; height: 34px;
+  font-size: 16px;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, color 0.15s;
 }
-.gear-btn:hover { border-color: #f97316; }
+.gear-btn:hover { border-color: var(--accent); color: var(--accent); }
 
 /* Pages */
 .page { display: none; width: 100%; max-width: 480px; }
@@ -43,45 +74,49 @@ h1 { font-size: 22px; font-weight: 700; color: #fff; }
 
 /* Card */
 .card {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 14px;
-  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
   margin-bottom: 16px;
 }
 .not-configured {
-  background: #1a1a1a;
-  border: 1px solid #f97316;
-  border-radius: 14px;
+  background: #0f0f0f;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
   padding: 16px 20px;
   margin-bottom: 16px;
   font-size: 13px;
-  color: #f97316;
+  color: var(--accent);
   text-align: center;
 }
 
-/* Meal buttons */
+/* Meal segmented control */
 .meal-row {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   margin-bottom: 12px;
+  background: #0c0c0c;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px;
 }
 .meal-btn {
   flex: 1;
-  padding: 8px 4px;
-  border-radius: 8px;
-  border: 1px solid #2a2a2a;
-  background: #111;
-  color: #666;
+  padding: 8px 6px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #7a7a7a;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
   text-align: center;
 }
 .meal-btn.active {
-  background: #f97316;
-  border-color: #f97316;
-  color: #000;
+  background: #161616;
+  border-color: #2f2f2f;
+  color: #f7f7f7;
   font-weight: 700;
 }
 
@@ -89,96 +124,213 @@ h1 { font-size: 22px; font-weight: 700; color: #fff; }
 .input-row { display: flex; gap: 10px; }
 input[type="text"], input[type="password"], input[type="url"] {
   flex: 1;
-  background: #111;
-  border: 1px solid #2a2a2a;
+  background: #0d0d0d;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 13px 16px;
   font-size: 15px;
-  color: #e2e2e2;
+  color: var(--text);
   outline: none;
   transition: border-color 0.2s;
   width: 100%;
 }
-input:focus { border-color: #f97316; }
-input::placeholder { color: #3a3a3a; }
+input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232, 112, 10, 0.16); }
+input::placeholder { color: #4b4b4b; }
+.section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #666;
+  margin-bottom: 10px;
+}
 
 button.log-btn {
-  background: #f97316;
+  background: var(--accent);
   border: none;
-  border-radius: 10px;
-  padding: 0 20px;
+  border-radius: 999px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   font-size: 22px;
   color: #000;
   cursor: pointer;
   font-weight: 700;
   flex-shrink: 0;
-  transition: background 0.15s;
+  transition: transform 0.15s, opacity 0.15s;
 }
-button.log-btn:hover { background: #ea6a0a; }
+button.log-btn:hover { transform: translateY(-1px); }
 button.log-btn:disabled { background: #2a2a2a; color: #555; cursor: not-allowed; }
+button.log-btn.tap { animation: tapPulse 220ms ease; }
+@keyframes tapPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
 
 .status { margin-top: 14px; min-height: 20px; font-size: 14px; text-align: center; }
-.status.ok      { color: #4ade80; }
+.status.ok      { color: var(--success); }
 .status.err     { color: #f87171; }
-.status.loading { color: #888; }
+.status.loading { color: #777; }
 
 .macros-row {
-  display: flex; gap: 10px; margin-top: 10px;
+  display: flex; gap: 10px; margin-top: 12px;
   justify-content: center;
 }
 .macro {
-  background: #111; border-radius: 8px;
-  padding: 6px 12px; font-size: 12px; text-align: center;
+  background: #0f0f0f;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 11px;
+  text-align: center;
+  min-width: 80px;
+  animation: chipIn 220ms ease;
 }
-.macro span { display: block; font-size: 16px; font-weight: 700; }
-.macro.cal span  { color: #f97316; }
-.macro.pro span  { color: #3b82f6; }
-.macro.carb span { color: #a855f7; }
-.macro.fat span  { color: #eab308; }
+.macro span {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.macro.cal span  { color: var(--accent); }
+.macro.pro span  { color: var(--protein); }
+.macro.carb span { color: var(--carbs); }
+.macro.fat span  { color: var(--fat); }
+@keyframes chipIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-.examples { font-size: 12px; color: #3a3a3a; margin-top: 12px; line-height: 1.9; }
-.examples span { color: #555; }
+.examples { font-size: 12px; color: #6c6c6c; margin-top: 12px; line-height: 1.9; }
+.examples span { color: #8a8a8a; }
+.divider {
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+}
+.quickadd-toggle {
+  width: 100%;
+  margin-top: 10px;
+  background: #0d0d0d;
+  border: 1px solid var(--border);
+  color: #d8d8d8;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.quickadd-toggle:hover { border-color: #353535; color: #fff; }
+.quickadd-panel {
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px dashed #313131;
+}
+.quickadd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.quickadd-grid input:nth-child(1) {
+  grid-column: 1 / span 2;
+}
+.quickadd-grid input { width: 100%; }
+.quickadd-submit {
+  width: 100%;
+  margin-top: 10px;
+  background: var(--accent);
+  border: none;
+  color: #000;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.quickadd-submit:disabled { background: #2a2a2a; color: #666; cursor: not-allowed; }
 
 /* Log list */
 .log-item {
-  background: #1a1a1a; border: 1px solid #2a2a2a;
-  border-radius: 10px; padding: 12px 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px;
   margin-bottom: 8px;
   display: flex; justify-content: space-between; align-items: center;
-  animation: fadeIn 0.2s ease;
+  animation: entryIn 260ms ease;
 }
-@keyframes fadeIn { from { opacity:0; transform: translateY(-4px); } to { opacity:1; } }
-.log-name { font-size: 14px; color: #ddd; font-weight: 500; text-transform: capitalize; }
-.log-sub  { font-size: 12px; color: #555; margin-top: 2px; }
-.log-cals { font-size: 16px; font-weight: 700; color: #f97316; }
+.log-actions { display: flex; gap: 6px; margin-top: 8px; }
+.mini-btn {
+  background: #0d0d0d;
+  border: 1px solid #2c2c2c;
+  color: #d0d0d0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.mini-btn:hover { border-color: #3b3b3b; color: #fff; }
+.mini-btn.danger:hover { border-color: #f87171; color: #f87171; }
+@keyframes entryIn { from { opacity:0; transform: translateY(-9px); } to { opacity:1; transform: translateY(0); } }
+.log-name { font-size: 14px; color: var(--text); font-weight: 600; text-transform: capitalize; }
+.log-sub  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.log-cals {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
 
 /* Settings */
 .settings-title {
   font-size: 18px; font-weight: 700; color: #fff;
   margin-bottom: 20px;
 }
-.field { margin-bottom: 16px; }
+.field { margin-bottom: 18px; position: relative; }
 .field label {
-  display: block; font-size: 12px; color: #666;
-  letter-spacing: 0.08em; text-transform: uppercase;
-  margin-bottom: 6px;
+  position: absolute;
+  left: 0;
+  top: 10px;
+  font-size: 13px;
+  color: #666;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  transition: all 0.16s ease;
+  pointer-events: none;
+}
+.field.floating input::placeholder { color: transparent; }
+.field.floating input:focus + label,
+.field.floating input:not(:placeholder-shown) + label {
+  top: -8px;
+  font-size: 11px;
+  color: #8b8b8b;
+}
+.field.floating input {
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 12px 0 8px;
+  background: transparent;
+}
+.field.floating input:focus {
+  border-color: transparent;
+  border-bottom: 1px solid var(--accent);
+  box-shadow: none;
 }
 .field select {
   width: 100%;
-  background: #111;
-  border: 1px solid #2a2a2a;
-  border-radius: 10px;
-  padding: 13px 16px;
+  background: #0d0d0d;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 12px;
   font-size: 14px;
   color: #e2e2e2;
   outline: none;
 }
-.field select:focus { border-color: #f97316; }
+.field select:focus { border-color: var(--accent); }
 .save-btn {
   width: 100%;
-  background: #f97316;
+  background: var(--accent);
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 14px;
   font-size: 15px;
   font-weight: 700;
@@ -191,23 +343,33 @@ button.log-btn:disabled { background: #2a2a2a; color: #555; cursor: not-allowed;
 .save-status { font-size: 13px; text-align: center; margin-top: 10px; }
 .back-btn {
   background: none;
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 16px;
   font-size: 13px;
-  color: #888;
+  color: #999;
   cursor: pointer;
   margin-bottom: 20px;
 }
-.back-btn:hover { border-color: #555; color: #ccc; }
+.back-btn:hover { border-color: #333; color: #e5e5e5; }
+@media (max-width: 520px) {
+  body { padding: 8px 12px 36px; }
+  .card { padding: 14px; border-radius: 10px; }
+  .meal-row { gap: 6px; }
+  .meal-btn { font-size: 11px; padding: 8px 2px; }
+  .quickadd-grid { grid-template-columns: 1fr; }
+  .quickadd-grid input:nth-child(1) { grid-column: auto; }
+  .macros-row { flex-wrap: wrap; }
+}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <h1>🍗 Food Logger</h1>
+  <h1>Macro Logger</h1>
   <button class="gear-btn" onclick="showSettings()" title="Settings">⚙️</button>
 </div>
+<div class="subhead">Precise nutrition logging for serious training.</div>
 
 <!-- LOG PAGE -->
 <div class="page active" id="logPage">
@@ -216,15 +378,30 @@ button.log-btn:disabled { background: #2a2a2a; color: #555; cursor: not-allowed;
   </div>
 
   <div class="card">
+    <div class="section-title">Meal Slot</div>
     <div class="meal-row" id="mealRow">
       <button class="meal-btn" onclick="setMeal('breakfast')">Breakfast</button>
       <button class="meal-btn" onclick="setMeal('lunch')">Lunch</button>
       <button class="meal-btn" onclick="setMeal('dinner')">Dinner</button>
       <button class="meal-btn" onclick="setMeal('snacks')">Snacks</button>
     </div>
+    <div class="section-title">Describe Food</div>
     <div class="input-row">
-      <input type="text" id="foodInput" placeholder="100g raw chicken breast" />
+      <input type="text" id="foodInput" placeholder="400g chicken breast or 200cal 40g protein" />
       <button class="log-btn" id="logBtn" onclick="logFood()">+</button>
+    </div>
+    <div class="divider"></div>
+    <button class="quickadd-toggle" onclick="toggleQuickAdd()">Quick Add Macros</button>
+    <div class="quickadd-panel" id="quickAddPanel" style="display:none">
+      <div class="section-title">Quick Add Details</div>
+      <div class="quickadd-grid">
+        <input type="text" id="qaName" placeholder="Name (default quickadd)" />
+        <input type="text" id="qaCal" placeholder="Calories (required)" />
+        <input type="text" id="qaPro" placeholder="Protein g (required)" />
+        <input type="text" id="qaCarb" placeholder="Carbs g (optional)" />
+        <input type="text" id="qaFat" placeholder="Fat g (optional)" />
+      </div>
+      <button class="quickadd-submit" id="qaBtn" onclick="submitQuickAdd()">Add Quick Food</button>
     </div>
     <div class="status" id="status"></div>
     <div class="macros-row" id="macrosRow" style="display:none">
@@ -233,15 +410,20 @@ button.log-btn:disabled { background: #2a2a2a; color: #555; cursor: not-allowed;
       <div class="macro carb"><span id="mCarb">-</span>g C</div>
       <div class="macro fat"><span id="mFat">-</span>g F</div>
     </div>
+    <div class="divider"></div>
     <div class="examples">
       <span>Examples:</span><br>
       100g raw chicken breast<br>
+      200cal 40g protein<br>
+      200cal 40g protein 10g fat called preworkout shake<br>
       80g oats, 389 cal 17g protein 66g carbs per 100g<br>
       2 eggs<br>
-      350g salmon fillet
+      350g salmon fillet<br>
+      how much raw chicken for 90g protein?
     </div>
   </div>
 
+  <div class="section-title" style="margin: 4px 0 8px 2px;">Recent</div>
   <div id="logList"></div>
 </div>
 
@@ -251,21 +433,21 @@ button.log-btn:disabled { background: #2a2a2a; color: #555; cursor: not-allowed;
   <div class="card">
     <div class="settings-title">Settings</div>
 
-    <div class="field">
+    <div class="field floating">
+      <input type="url" id="sUrl" placeholder=" " />
       <label>SparkyFitness URL</label>
-      <input type="url" id="sUrl" placeholder="http://192.168.68.77" />
     </div>
-    <div class="field">
+    <div class="field floating">
+      <input type="text" id="sEmail" placeholder=" " />
       <label>SparkyFitness Email</label>
-      <input type="text" id="sEmail" placeholder="you@email.com" />
     </div>
-    <div class="field">
+    <div class="field floating">
+      <input type="password" id="sPass" placeholder=" " />
       <label>SparkyFitness Password</label>
-      <input type="password" id="sPass" placeholder="••••••••" />
     </div>
-    <div class="field">
+    <div class="field floating">
+      <input type="password" id="sKey" placeholder=" " />
       <label>AiZolo API Key</label>
-      <input type="password" id="sKey" placeholder="••••••••" />
     </div>
     <div class="field">
       <label>AI Model</label>
@@ -331,6 +513,35 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+function animateValue(el, to, decimals = 1, duration = 420) {
+  const from = 0;
+  const start = performance.now();
+  function frame(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const value = from + (to - from) * p;
+    el.textContent = value.toFixed(decimals).replace(/\.0$/, '');
+    if (p < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+function showMacrosAnimated(m) {
+  const macrosRow = document.getElementById('macrosRow');
+  const mCal = document.getElementById('mCal');
+  const mPro = document.getElementById('mPro');
+  const mCarb = document.getElementById('mCarb');
+  const mFat = document.getElementById('mFat');
+  mCal.textContent = '0';
+  mPro.textContent = '0';
+  mCarb.textContent = '0';
+  mFat.textContent = '0';
+  macrosRow.style.display = 'flex';
+  animateValue(mCal, Number(m.calories || 0));
+  animateValue(mPro, Number(m.protein || 0));
+  animateValue(mCarb, Number(m.carbs || 0));
+  animateValue(mFat, Number(m.fat || 0));
+}
+
 async function logFood() {
   const input  = document.getElementById('foodInput');
   const text   = input.value.trim();
@@ -340,13 +551,16 @@ async function logFood() {
   const status    = document.getElementById('status');
   const macrosRow = document.getElementById('macrosRow');
 
+  btn.classList.remove('tap');
+  void btn.offsetWidth;
+  btn.classList.add('tap');
   btn.disabled = true;
   status.className = 'status loading';
   status.textContent = 'Logging...';
   macrosRow.style.display = 'none';
 
   try {
-    const resp = await fetch('/log', {
+    const resp = await fetch('/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, meal_type: meal })
@@ -358,15 +572,23 @@ async function logFood() {
     status.textContent = data.message;
 
     const m = data.macros;
-    document.getElementById('mCal').textContent  = m.calories;
-    document.getElementById('mPro').textContent  = m.protein;
-    document.getElementById('mCarb').textContent = m.carbs;
-    document.getElementById('mFat').textContent  = m.fat;
-    macrosRow.style.display = 'flex';
+    showMacrosAnimated(m);
 
-    entries.unshift({ text, meal, macros: m });
-    renderLog();
-    input.value = '';
+    if (data.mode === 'logged' || data.entry_id) {
+      entries.unshift({
+        id: data.entry_id,
+        foodName: data.food_name || text,
+        grams: data.grams,
+        text: `${data.grams}g ${data.food_name || text}`,
+        meal: data.meal || meal,
+        macros: m
+      });
+      renderLog();
+      input.value = '';
+    } else {
+      input.value = 'log it';
+      input.select();
+    }
   } catch(e) {
     status.className = 'status err';
     status.textContent = '❌ ' + e.message;
@@ -376,16 +598,165 @@ async function logFood() {
   }
 }
 
+function toggleQuickAdd() {
+  const panel = document.getElementById('quickAddPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+async function submitQuickAdd() {
+  const status = document.getElementById('status');
+  const macrosRow = document.getElementById('macrosRow');
+  const btn = document.getElementById('qaBtn');
+
+  const name = (document.getElementById('qaName').value || '').trim() || 'quickadd';
+  const cal = Number((document.getElementById('qaCal').value || '').trim());
+  const pro = Number((document.getElementById('qaPro').value || '').trim());
+  const carbRaw = (document.getElementById('qaCarb').value || '').trim();
+  const fatRaw = (document.getElementById('qaFat').value || '').trim();
+  const carb = carbRaw ? Number(carbRaw) : 0;
+  const fat = fatRaw ? Number(fatRaw) : 0;
+
+  if (!Number.isFinite(cal) || !Number.isFinite(pro) || cal < 0 || pro < 0) {
+    status.className = 'status err';
+    status.textContent = '❌ Enter valid calories and protein';
+    return;
+  }
+  if (!Number.isFinite(carb) || !Number.isFinite(fat) || carb < 0 || fat < 0) {
+    status.className = 'status err';
+    status.textContent = '❌ Carbs/fat must be valid numbers';
+    return;
+  }
+
+  const quickText = `${cal}cal ${pro}g protein ${carb}g carbs ${fat}g fat called ${name}`;
+
+  btn.classList.remove('tap');
+  void btn.offsetWidth;
+  btn.classList.add('tap');
+  btn.disabled = true;
+  status.className = 'status loading';
+  status.textContent = 'Quick adding...';
+  macrosRow.style.display = 'none';
+
+  try {
+    const resp = await fetch('/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: quickText, meal_type: meal })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || 'Error');
+
+    const m = data.macros;
+    status.className = 'status ok';
+    status.textContent = data.message;
+    showMacrosAnimated(m);
+
+    entries.unshift({
+      id: data.entry_id,
+      foodName: data.food_name || name,
+      grams: data.grams,
+      text: `${data.grams}g ${data.food_name || name}`,
+      meal: data.meal || meal,
+      macros: m
+    });
+    renderLog();
+
+    ['qaName', 'qaCal', 'qaPro', 'qaCarb', 'qaFat'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+  } catch (e) {
+    status.className = 'status err';
+    status.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 function renderLog() {
   document.getElementById('logList').innerHTML = entries.slice(0, 15).map(e => `
     <div class="log-item">
       <div>
         <div class="log-name">${e.text}</div>
         <div class="log-sub">${e.meal} · ${e.macros.protein}g P · ${e.macros.carbs}g C · ${e.macros.fat}g F</div>
+        <div class="log-actions">
+          <button class="mini-btn" onclick="editEntry('${e.id}')">Edit</button>
+          <button class="mini-btn danger" onclick="deleteEntry('${e.id}')">Delete</button>
+        </div>
       </div>
       <div class="log-cals">${e.macros.calories}</div>
     </div>
   `).join('');
+}
+
+async function deleteEntry(id) {
+  if (!id) return;
+  if (!confirm('Delete this entry from Sparky?')) return;
+  try {
+    const resp = await fetch(`/entries/${id}`, { method: 'DELETE' });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data.detail || 'Delete failed');
+    const i = entries.findIndex(e => e.id === id);
+    if (i >= 0) entries.splice(i, 1);
+    renderLog();
+  } catch (e) {
+    const status = document.getElementById('status');
+    status.className = 'status err';
+    status.textContent = '❌ ' + e.message;
+  }
+}
+
+async function editEntry(id) {
+  const item = entries.find(e => e.id === id);
+  if (!item) return;
+  const manual = confirm('Manual macro edit? Press OK to set calories/protein yourself, Cancel for AI parse edit.');
+  const updatedMeal = prompt('Meal type:', item.meal) || item.meal;
+  let payload;
+  if (manual) {
+    const foodName = prompt('Food name:', item.foodName || item.text) || (item.foodName || item.text);
+    const grams = prompt('Grams:', String(item.grams ?? 100));
+    const calories = prompt('Calories (total):', String(item.macros.calories));
+    const protein = prompt('Protein g (total):', String(item.macros.protein));
+    const carbs = prompt('Carbs g (total):', String(item.macros.carbs));
+    const fat = prompt('Fat g (total):', String(item.macros.fat));
+    if ([grams, calories, protein, carbs, fat].some(v => v === null || v.trim() === '')) return;
+    payload = {
+      text: `${grams}g ${foodName}`,
+      food_name: foodName,
+      grams: Number(grams),
+      calories: Number(calories),
+      protein: Number(protein),
+      carbs: Number(carbs),
+      fat: Number(fat),
+      meal_type: updatedMeal.trim().toLowerCase()
+    };
+  } else {
+    const updatedText = prompt("Edit text (e.g. '400g raw chicken breast'):", item.text);
+    if (!updatedText || !updatedText.trim()) return;
+    payload = { text: updatedText.trim(), meal_type: updatedMeal.trim().toLowerCase() };
+  }
+  try {
+    const resp = await fetch(`/entries/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || 'Edit failed');
+    item.id = data.entry_id;
+    item.foodName = data.food_name;
+    item.grams = data.grams;
+    item.text = `${data.grams}g ${data.food_name}`;
+    item.meal = data.meal;
+    item.macros = data.macros;
+    renderLog();
+    const status = document.getElementById('status');
+    status.className = 'status ok';
+    status.textContent = 'Updated entry.';
+  } catch (e) {
+    const status = document.getElementById('status');
+    status.className = 'status err';
+    status.textContent = '❌ ' + e.message;
+  }
 }
 
 // ── Settings ──────────────────────────────────────────

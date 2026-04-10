@@ -1,4 +1,7 @@
-"/data/" 
-"*.env" 
-"__pycache__/" 
-"venv/" 
+/data/
+*.env
+__pycache__/
+venv/
+.cursor/
+app/static/.cursor/
+*.pyc
