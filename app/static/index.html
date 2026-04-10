@@ -377,6 +377,7 @@ button.log-btn.tap { animation: tapPulse 220ms ease; }
 }
 .auth-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
 .auth-sub { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+.auth-mode { color: #9a9a9a; font-size: 12px; margin-bottom: 10px; }
 .auth-row { display: flex; gap: 8px; }
 .auth-btn {
   background: var(--accent);
@@ -402,8 +403,8 @@ button.log-btn.tap { animation: tapPulse 220ms ease; }
 <body>
 <div class="auth-gate" id="authGate">
   <div class="auth-card">
-    <div class="auth-title">Unlock Macro Logger</div>
-    <div class="auth-sub">Log in once and stay signed in on this device.</div>
+    <div class="auth-title" id="authTitle">Unlock Macro Logger</div>
+    <div class="auth-sub" id="authSub">Log in once and stay signed in on this device.</div>
     <div class="auth-row">
       <input type="password" id="authPassword" placeholder="App password" />
       <button class="auth-btn" onclick="submitLogin()">Log In</button>
@@ -538,6 +539,13 @@ async function initAuth() {
     const data = await resp.json();
     appRequiresAuth = !!data.requires_auth;
     appAuthenticated = !!data.authenticated || !appRequiresAuth;
+    const authGate = document.getElementById('authGate');
+    const authTitle = document.getElementById('authTitle');
+    const authSub = document.getElementById('authSub');
+    const authBtn = document.querySelector('.auth-btn');
+    authTitle.textContent = 'Unlock Macro Logger';
+    authSub.textContent = 'Log in once and stay signed in on this device.';
+    authBtn.textContent = 'Log In';
     document.getElementById('authGate').style.display = appAuthenticated ? 'none' : 'flex';
   } catch (e) {
     document.getElementById('authGate').style.display = 'flex';
@@ -558,6 +566,7 @@ async function submitLogin() {
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.detail || 'Login failed');
     appAuthenticated = true;
+    appRequiresAuth = true;
     document.getElementById('authGate').style.display = 'none';
     autoMeal();
     await loadConfig();
